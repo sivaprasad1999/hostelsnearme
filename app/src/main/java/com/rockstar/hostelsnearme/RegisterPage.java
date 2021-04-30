@@ -1,59 +1,89 @@
 package com.rockstar.hostelsnearme;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.ActionCodeSettings;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+
 
 public class RegisterPage extends AppCompatActivity {
-    EditText usr,passww,conf,mail,phno;
-    static SharedPreferences spp;
-    SharedPreferences.Editor se;
+    EditText usr, passww, conf, mail, phno;
+    FirebaseUser user;
+    FirebaseAuth auth;
+    DatabaseReference reference;
+
+    FirebaseDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register_page);
-        usr=findViewById(R.id.editusername);
-        passww=findViewById(R.id.editTextPass);
-        conf=findViewById(R.id.editconfirmPass);
-        mail=findViewById(R.id.editTextmail);
-        phno=findViewById(R.id.phone);
-        spp=getSharedPreferences("username",MODE_PRIVATE);
+        usr = findViewById(R.id.editusername);
+        passww = findViewById(R.id.editTextPass);
+        conf = findViewById(R.id.editconfirmPass);
+        mail = findViewById(R.id.editTextmail);
+        phno = findViewById(R.id.phone);
+        auth = FirebaseAuth.getInstance();
+
     }
 
     public void submit(View view) {
-        String usernam=mail.getText().toString();
-        String mypass=passww.getText().toString();
-        String confpaas=passww.getText().toString();
-        String emaill=mail.getText().toString();
+        final String usernam = usr.getText().toString();
+        final String mypass = passww.getText().toString();
+        String confpaas = conf.getText().toString();
+        final String emaill = mail.getText().toString();
+        final String phnnum = phno.getText().toString();
 
-//        Toast.makeText(this, ""+usernam, Toast.LENGTH_SHORT).show();
-        se=spp.edit();
-        if (mypass.equals(confpaas))
-        {
-            se.putString("Username",usernam);
-            se.putString("Passwoard",mypass);
-            se.putString("Confirmpasswoard",confpaas);
-            se.putString("Emaill",emaill);
-            se.apply();
-            Toast.makeText(this, "Register Sucess", Toast.LENGTH_SHORT).show();
-            Intent intent=new Intent(this,MainActivity.class);
-            startActivity(intent);
+        if (usernam.isEmpty()) {
+            usr.setError("Please Enter UserName");
+        } else if (mypass.isEmpty()) {
+            passww.setError("Please Enter Password");
+        } else if (emaill.isEmpty()) {
+            mail.setError("Please Enter Your Mail");
+        } else if (confpaas.isEmpty() && !passww.equals(confpaas)) {
+            conf.setError("Password is Not Matached");
+        }else if (phnnum.isEmpty()){
+            phno.setError("Please enter Phone Number");
         }
         else {
-            Toast.makeText(this,   "your password is not match to your confirmed password", Toast.LENGTH_SHORT).show();
-        }
+            auth.createUserWithEmailAndPassword(emaill, mypass).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(RegisterPage.this, "Register Sucessfully", Toast.LENGTH_SHORT).show();
+                        Intent i = new Intent(RegisterPage.this, MainActivity.class);
+                        startActivity(i);
+                    } else {
+                        Toast.makeText(RegisterPage.this, "Failed" + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
 
+        }
     }
 
     public void signin(View view) {
-        Intent intent=new Intent(this,MainActivity.class);
-        startActivity(intent);
+        Intent i = new Intent(this, MainActivity.class);
+        startActivity(i);
     }
 }
+
